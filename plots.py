@@ -4,6 +4,8 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import colorsys
+import seaborn as sns
+import pandas as pd
 
 def get_top10_countries_with_top3_provinces(df: DataFrame):
 
@@ -157,3 +159,156 @@ def get_top10_countries_with_top3_provinces(df: DataFrame):
 
     plt.tight_layout()
     plt.show()
+
+def get_top10_countries_price_distribution(df: DataFrame):
+    # Keep only rows with country and price
+    df_clean = df.dropna(subset=['country', 'price'])
+
+    # Take top 10 countries by median price
+    top10_countries = df_clean.groupby('country')['price'].median().sort_values(ascending=False).index[:10]
+
+    # Create boxplot with points overlay (no y-axis limit, so outliers included)
+    plt.figure(figsize=(16, 8))
+    sns.boxplot(
+        data=df_clean[df_clean['country'].isin(top10_countries)],
+        x='country',
+        y='price',
+        order=top10_countries,
+        showcaps=True,
+        showfliers=True,  # include outliers
+        boxprops={'facecolor': 'lightblue', 'edgecolor': 'black'},
+        medianprops={'color': 'red', 'linewidth': 2},
+        whiskerprops={'color': 'black'}
+    )
+
+    # Overlay wine quality (points) as jittered scatter
+    sns.stripplot(
+        data=df_clean[df_clean['country'].isin(top10_countries)],
+        x='country',
+        y='price',
+        order=top10_countries,
+        hue='points',
+        dodge=False,
+        jitter=0.3,
+        size=3,
+        alpha=0.4,
+        palette='viridis'
+    )
+
+    plt.title('Wine Price Distribution by Country with Quality Overlay', fontsize=16, pad=16)
+    plt.xlabel('Country', fontsize=12)
+    plt.ylabel('Price', fontsize=12)
+    plt.legend(title='Points', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.show()
+
+def get_top10_countries_price_points_correlation(df: DataFrame):
+    # Keep only rows with country and price
+    df_clean = df.dropna(subset=['country', 'price', 'points'])
+
+    # Get top 10 countries
+    top_countries = df_clean['country'].value_counts().nlargest(10).index
+    df_top = df_clean[df_clean['country'].isin(top_countries)]
+
+    # OK Calcular correlação entre price e points para cada país
+    corr_by_country = (
+        df_top.groupby('country', group_keys=False)
+        .apply(lambda g: g['price'].corr(g['points']))
+        .reset_index(name='correlation')
+    )
+
+    # Transformar em matriz para heatmap
+    corr_matrix = corr_by_country.set_index('country')[['correlation']]
+
+    # Ordenar pela correlação (descendente)
+    corr_matrix_sorted = corr_matrix.sort_values('correlation', ascending=False)
+
+    # Plotar heatmap com palette 'flare'
+    plt.figure(figsize=(8,6))
+    sns.heatmap(
+        corr_matrix_sorted,
+        annot=True, cmap='rocket_r', center=0, cbar=True
+    )
+    plt.title('Correlation between Price and Points by Country (Sorted)', fontsize=14)
+    plt.show()
+
+def get_price_points_trend_over_years(df: DataFrame):
+    # Filtra vinhos com pontos, preço e ano
+    wines_clean = df.dropna(subset=['points', 'price', 'year'])
+
+    # Agrupa por ano e calcula média de pontos e preço
+    summary_by_year = wines_clean.groupby('year').agg({'points':'mean', 'price':'mean'}).sort_index()
+
+    # Preenche anos faltantes
+    all_years = pd.RangeIndex(summary_by_year.index.min(), summary_by_year.index.max() + 1)
+    summary_by_year = summary_by_year.reindex(all_years)
+
+    fig, ax1 = plt.subplots(figsize=(12,6))
+
+    sns.lineplot(x=summary_by_year.index, y=summary_by_year['points'], marker='o', color='blue', label='Média de Pontos', ax=ax1)
+    ax1.set_xlabel('Ano de Safra')
+    ax1.set_ylabel('Média de Pontos', color='blue')
+    ax1.tick_params(axis='y', labelcolor='blue')
+
+    # Ticks do eixo X a cada ano
+    plt.xticks(ticks=summary_by_year.index, labels=summary_by_year.index, rotation=45)
+
+    # Segundo eixo y para preço
+    ax2 = ax1.twinx()
+    sns.lineplot(x=summary_by_year.index, y=summary_by_year['price'], marker='o', color='green', label='Preço Médio', ax=ax2)
+    ax2.set_ylabel('Preço Médio (USD)', color='green')
+    ax2.tick_params(axis='y', labelcolor='green')
+
+    plt.title('Comparativo: Média de Pontos vs Preço Médio por Ano de Safra')
+    plt.tight_layout()
+    plt.show()
+
+def get_description_points_relation(df: DataFrame):
+    # Remove linhas com valores nulos em taster_name ou points
+    wines_clean = df.dropna(subset=['taster_name', 'points'])
+
+    # Preenche valores nulos em description com string vazia
+    wines_clean['description'] = wines_clean['description'].fillna('')
+
+    # Cria coluna com tamanho da descrição
+    wines_clean['description_length'] = wines_clean['description'].apply(len)
+
+    plt.figure(figsize=(12,6))
+    sns.scatterplot(data=wines_clean, x='description_length', y='points', alpha=0.3)
+    plt.xlabel('Tamanho da Descrição', fontsize=12)
+    plt.ylabel('Pontuação', fontsize=12)
+    plt.title('Relação entre tamanho da descrição e pontuação', fontsize=14)
+    plt.tight_layout()
+    plt.show()
+
+def get_tasters_points_relation(df: DataFrame):
+    # Remove linhas com valores nulos em taster_name ou points
+    wines_clean = df.dropna(subset=['taster_name', 'points'])
+
+    # Preenche valores nulos em description com string vazia
+    wines_clean['description'] = wines_clean['description'].fillna('')
+
+    # Boxplot ordenado pela mediana
+    # Calcula a mediana das pontuações por degustador
+    medians = wines_clean.groupby('taster_name')['points'].median().sort_values(ascending=False)
+
+    # Lista dos degustadores ordenada pela mediana
+    order = medians.index
+
+    plt.figure(figsize=(12,6))
+    sns.boxplot(
+        data=wines_clean,
+        x='taster_name',
+        y='points',
+        palette='flare',
+        order=order  # passa a ordem aqui
+    )
+    plt.xticks(rotation=90)
+    plt.title('Diferença de pontuação entre degustadores (ordenado por mediana)', fontsize=14)
+    plt.xlabel('Degustador', fontsize=12)
+    plt.ylabel('Pontuação', fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+
+

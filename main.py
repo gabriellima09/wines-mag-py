@@ -1,176 +1,191 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import colorsys
-from matplotlib.patches import Patch
 import matplotlib.cm as cm
+from matplotlib.patches import Patch
+from scipy.stats import f_oneway
 
 import plots
 from winemag_data import winesmag
 
-pd.set_option('display.max_columns', None)
-print(winesmag.info())
-print(winesmag.head(10))
+# pd.set_option('display.max_columns', None)
+# pd.set_option('display.max_rows', None)
+# print(winesmag.info())
+# print(winesmag.head())
 
 # Plots generation
-#plots.get_top10_countries_with_top3_provinces(winesmag)
-
-#top 10 mais caros 
-df_clean = winesmag.dropna(subset=['title', 'price', 'points', 'country'])
-print(df_clean[['title', 'price', 'points', 'country']].sort_values('price', ascending=False).head(10))
-
-#top 5 mais baratos 
-df_clean = winesmag.dropna(subset=['title', 'price', 'points', 'country'])
-print(df_clean[['title', 'price', 'points', 'country']].sort_values('price').head())
-
-#top 5 vinhos por pontos
-print(winesmag[['title', 'points', 'price', 'country']].sort_values('points', ascending=False).head())
+# plots.get_top10_countries_with_top3_provinces(winesmag)
+# plots.get_top10_countries_price_distribution(winesmag)
+# plots.get_top10_countries_price_points_correlation(winesmag)
+# plots.get_price_points_trend_over_years(winesmag)
+# plots.get_description_points_relation(winesmag)
+# plots.get_tasters_points_relation(winesmag)
 
 
-### BOXPLOT OK
-# # Keep only rows with country and points
-# df_clean = winesmag.dropna(subset=['country', 'points', 'price'])
 
-# # Get top 10 countries by number of reviews
-# top_countries = df_clean['country'].value_counts().nlargest(10).index
-# df_top = df_clean[df_clean['country'].isin(top_countries)]
 
-# # Sort countries by median price
-# median_price = df_top.groupby('country')['price'].median().sort_values(ascending=False)
-# sorted_countries = median_price.index
-# df_top['country'] = pd.Categorical(df_top['country'], categories=sorted_countries, ordered=True)
+# DATA ANALISYS AND VISUALIZATION SAMPLES
 
-# # Customize outliers
-# flierprops = dict(marker='D', color='white', markersize=3, 
-#                   markeredgecolor='black', markerfacecolor='black')
+# #top 10 mais caros 
+# print('CAROS')
+# df_clean = winesmag.dropna(subset=['title', 'price', 'points', 'country'])
+# print(df_clean[['title', 'price', 'points', 'country']].sort_values('price', ascending=False).head(10))
 
-# # --- BOXPLOT ---
-# plt.figure(figsize=(14,8))
-# sns.boxplot(
-#     data=df_top,
-#     x='country',
-#     y='price',
+# #top 5 mais baratos 
+# print('BARATOS')
+# df_clean = winesmag.dropna(subset=['title', 'price', 'country', 'points']).groupby('title').first().reset_index()
+# print(df_clean[['title', 'price', 'country', 'points']].sort_values(['price', 'points']).head())
+
+# #top 5 vinhos por pontos c menor preço
+# print('PONTOS c menor preço')
+# print(winesmag[['title', 'points', 'price', 'country']].sort_values(['points', 'price'], ascending=[False, True]).head())
+
+# Vinhos com maior qualidade por avaialiação
+# # Filtra os vinhos com pontos > 90
+# cols = ['country', 'description', 'designation', 'points', 'price', 'province', 'title', 'variety', 'winery', 'year']
+# high_scores = winesmag.loc[winesmag['points'] > 90, cols]
+
+# # Contagem de vinhos por país
+# print("\nQuantidade de vinhos por país:")
+# print(high_scores['country'].value_counts().head(10))  # top 10 países
+
+# # Contagem de variedades de uva mais comuns
+# print("\nVariedades mais frequentes:")
+# print(high_scores['variety'].value_counts().head(10))
+
+# # Preço médio por país
+# print("\nPreço médio dos vinhos por país:")
+# print(high_scores.groupby('country')['price'].mean().sort_values(ascending=False).head(10))
+
+# # Distribuição por ano de produção
+# print("\nDistribuição dos vinhos por ano:")
+# print(high_scores['year'].value_counts().sort_index())
+
+# print("\Descrições dos vinhos:")
+# print(high_scores['description'].value_counts().head(10))
+
+# print("\Designação dos vinhos:")
+# print(high_scores['designation'].value_counts().head())
+
+
+
+# # Média de pontos por degustador
+# # Filtra apenas linhas sem valores nulos em taster_name e points
+# wines_clean = winesmag.dropna(subset=['taster_name', 'points'])
+
+# # Agrupa por degustador e calcula a média das pontuações
+# avg_points_by_taster = wines_clean.groupby('taster_name')['points'].mean().sort_values(ascending=False)
+
+# print(avg_points_by_taster)
+
+# # Cria coluna com tamanho da descrição
+# wines_clean['description_length'] = wines_clean['description'].fillna('').apply(len)
+
+# # Top 10 descrições mais longas
+# longest_descriptions = wines_clean.sort_values('description_length', ascending=False).head(10)
+# print(longest_descriptions[['taster_name', 'points', 'description_length']])
+
+# # Scatter: descrição x pontos
+# sns.scatterplot(data=wines_clean, x='description_length', y='points')
+# plt.xlabel('Tamanho da Descrição')
+# plt.ylabel('Pontuação')
+# plt.title('Relação entre tamanho da descrição e pontuação')
+# plt.show()
+
+# # Boxplot: pontuação por degustador
+# sns.boxplot(data=wines_clean, x='taster_name', y='points')
+# plt.xticks(rotation=90)
+# plt.title('Diferença de pontuação entre degustadores')
+# plt.show()
+
+
+# # =============================
+# # Limpeza dos dados
+# # =============================
+# # Remove linhas com valores nulos em taster_name ou points
+# wines_clean = winesmag.dropna(subset=['taster_name', 'points'])
+
+# # Preenche valores nulos em description com string vazia
+# wines_clean['description'] = wines_clean['description'].fillna('')
+
+# # =============================
+# # Média de pontos por degustador
+# # =============================
+# avg_points_by_taster = wines_clean.groupby('taster_name')['points'].mean().sort_values(ascending=False)
+# print("Média de pontos por degustador:\n", avg_points_by_taster)
+
+# # =============================
+# # Comprimento das descrições
+# # =============================
+# wines_clean['description_length'] = wines_clean['description'].apply(len)
+
+# # Top 10 descrições mais longas
+# longest_descriptions = wines_clean.sort_values('description_length', ascending=False).head(10)
+# print("\nTop 10 descrições mais longas:\n", longest_descriptions[['taster_name', 'points', 'description_length']])
+
+# # =============================
+# # Scatter plot: descrição x pontos (gradiente Flare)
+# # =============================
+# plt.figure(figsize=(10,6))
+
+# # Cria objeto Axes
+# ax = sns.scatterplot(
+#     data=wines_clean,
+#     x='description_length',
+#     y='points',
+#     hue='description_length',  # Gradiente baseado no tamanho da descrição
 #     palette='flare',
-#     flierprops=flierprops
+#     edgecolor='k',
+#     alpha=0.7,
+#     legend=False
 # )
-# plt.title('Price Distribution by Top 10 Countries (Sorted by Median)', fontsize=16)
-# plt.xlabel('Country')
-# plt.ylabel('Price')
-# plt.show()
-# ### BOXPLOT OK
 
+# # Adiciona colorbar corretamente
+# norm = mpl.colors.Normalize(vmin=wines_clean['description_length'].min(),
+#                             vmax=wines_clean['description_length'].max())
+# sm = mpl.cm.ScalarMappable(cmap='flare', norm=norm)
+# sm.set_array([])
+# plt.colorbar(sm, ax=ax, label='Tamanho da Descrição')
 
-# # Keep only rows with country, points, price
-# df_clean = winesmag.dropna(subset=['country','points','price'])
-
-# # Top 10 countries by number of reviews
-# top_countries = df_clean['country'].value_counts().nlargest(10).index
-# df_top = df_clean[df_clean['country'].isin(top_countries)]
-
-# # Sort countries by median points
-# median_points = df_top.groupby('country')['points'].median().sort_values(ascending=False)
-# sorted_countries = median_points.index
-# df_top['country'] = pd.Categorical(df_top['country'], categories=sorted_countries, ordered=True)
-
-# sns.lineplot(df_top)
+# ax.set_xlabel('Tamanho da Descrição', fontsize=12)
+# ax.set_ylabel('Pontuação', fontsize=12)
+# ax.set_title('Relação entre tamanho da descrição e pontuação', fontsize=14)
+# plt.tight_layout()
 # plt.show()
 
+# # =============================
+# # Boxplot ordenado pela mediana
+# # =============================
 
+# # Calcula a mediana das pontuações por degustador
+# medians = wines_clean.groupby('taster_name')['points'].median().sort_values(ascending=False)
 
+# # Lista dos degustadores ordenada pela mediana
+# order = medians.index
 
-
-# print(winesmag.info())
-# print(winesmag[['title', 'year']].head(100))
-
-# tratar dados de países desconhecidos
-# tratar pontos não informados
-
-# country_points = winesmag[['country', 'points']].groupby('country').mean().sort_values('points', ascending=False)
-# print(country_points)
-
-# wine_points = (
-#     winesmag[['designation', 'province', 'region_1', 'variety', 'winery', 'points']]
-#     .groupby(['designation', 'province', 'region_1', 'variety', 'winery'])
-#     .mean()
-#     .sort_values('points', ascending=False))
-#
-# print(wine_points)
-
-#show all numeric values
-# sns.pairplot(winesmag.head(1000), hue='country')
-# plt.show()
-
-# sns.violinplot(data=winesmag[['country', 'price']].head(1000), x = 'country', y = 'price', order=winesmag.groupby("country")["price"].median().sort_values(ascending=False).index)
-# #sns.violinplot(data=winesmag.head(1000), x = 'country', y = 'points')
-# plt.title("Wine Price Distribution by Country")
-# plt.show()
-
-# df_clean = winesmag.dropna(subset=["country", "price", "points"])
-
-# # Take top 10 countries by median price
-# top10_countries = df_clean.groupby("country")["price"].median().sort_values(ascending=False).index[:10]
-
-# # Create boxplot with points overlay (no y-axis limit, so outliers included)
-# plt.figure(figsize=(16, 8))
+# plt.figure(figsize=(12,6))
 # sns.boxplot(
-#     data=df_clean[df_clean["country"].isin(top10_countries)],
-#     x="country",
-#     y="price",
-#     order=top10_countries,
-#     showcaps=True,
-#     showfliers=True,  # include outliers
-#     boxprops={"facecolor": "lightblue", "edgecolor": "black"},
-#     medianprops={"color": "red", "linewidth": 2},
-#     whiskerprops={"color": "black"}
+#     data=wines_clean,
+#     x='taster_name',
+#     y='points',
+#     palette='flare',
+#     order=order  # passa a ordem aqui
 # )
-
-# # Overlay wine quality (points) as jittered scatter
-# # sns.stripplot(
-# #     data=df_clean[df_clean["country"].isin(top10_countries)],
-# #     x="country",
-# #     y="price",
-# #     order=top10_countries,
-# #     hue="points",
-# #     dodge=False,
-# #     jitter=0.3,
-# #     size=3,
-# #     alpha=0.4,
-# #     palette="viridis"
-# # )
-
-# plt.ylim(0, 200)  # cap extreme outliers
-
-# plt.xticks(rotation=45, ha="right")
-# plt.title("Wine Price Distribution by Country (Top 10 by Median Price)")
-# plt.ylabel("Price (USD)")
-# plt.xlabel("Country")
+# plt.xticks(rotation=90)
+# plt.title('Diferença de pontuação entre degustadores (ordenado por mediana)', fontsize=14)
+# plt.xlabel('Degustador', fontsize=12)
+# plt.ylabel('Pontuação', fontsize=12)
+# plt.tight_layout()
 # plt.show()
 
+# Teste ANOVA para diferença entre degustadores
+# groups = [group['points'].values for name, group in wines_clean.groupby('taster_name')]
+# f_stat, p_val = f_oneway(*groups)
+# print(f"\nTeste ANOVA: F-statistic = {f_stat:.2f}, p-value = {p_val:.4f}")
 
-#print(winesmag[winesmag['country'] == 'China'].head())
-
-# df_clean = winesmag.dropna(subset=["country", "points"])
-
-# # Take top 10 countries by median points
-# top10_countries = df_clean.groupby("country")["points"].median().sort_values(ascending=False).index[:10]
-
-# # Create boxplot with points overlay (no y-axis limit, so outliers included)
-# plt.figure(figsize=(16, 8))
-# sns.boxplot(
-#     data=df_clean[df_clean["country"].isin(top10_countries)],
-#     x="country",
-#     y="points",
-#     order=top10_countries,
-#     showcaps=True,
-#     showfliers=True,  # include outliers
-#     boxprops={"facecolor": "lightblue", "edgecolor": "black"},
-#     medianprops={"color": "red", "linewidth": 2},
-#     whiskerprops={"color": "black"}
-# )
-
-# plt.xticks(rotation=45, ha="right")
-# plt.title("Wine Points Distribution by Country (Top 10 by Median Points)")
-# plt.ylabel("Points (USD)")
-# plt.xlabel("Country")
-# plt.show()
+# # Calcula correlação entre comprimento da descrição e pontuação
+# correlation = wines_clean['description_length'].corr(wines_clean['points'])
+# print(f"Correlação entre tamanho da descrição e pontuação: {correlation:.2f}")
