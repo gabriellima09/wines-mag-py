@@ -94,7 +94,7 @@ def get_top10_countries_with_top3_provinces(df: DataFrame):
     ax.grid(False)
 
     # Title only
-    ax.set_title("Top 10 Countries with Their Top 3 Provinces", fontsize=16, pad=16)
+    ax.set_title("Top 10 Países Produtores e suas Top 3 Províncias", fontsize=16, pad=16)
 
     # --- Create two separate legends for better grouping ---
     # Split countries into two groups for two columns
@@ -123,7 +123,7 @@ def get_top10_countries_with_top3_provinces(df: DataFrame):
         full_total = int(totals.get(country, 0))
         if full_total > displayed_total:
             other_patch = Patch(facecolor=(0.9, 0.9, 0.9), edgecolor='black', 
-                            alpha=0.7, label=f"   └─ Other provinces")
+                            alpha=0.7, label=f"   └─ Outras províncias")
             handles_col1.append(other_patch)
 
     # Create handles for column 2
@@ -147,7 +147,7 @@ def get_top10_countries_with_top3_provinces(df: DataFrame):
         full_total = int(totals.get(country, 0))
         if full_total > displayed_total:
             other_patch = Patch(facecolor=(0.9, 0.9, 0.9), edgecolor='black', 
-                            alpha=0.7, label=f"   └─ Other provinces")
+                            alpha=0.7, label=f"   └─ Outras províncias")
             handles_col2.append(other_patch)
 
     # Create two separate legends side by side
@@ -200,9 +200,9 @@ def get_top10_countries_price_distribution(df: pd.DataFrame):
         whiskerprops={'color': 'black'}
     )
 
-    plt.title('Wine Price Distribution by Country (IQR Outliers Removed)', fontsize=16, pad=16)
-    plt.xlabel('Country', fontsize=12)
-    plt.ylabel('Price', fontsize=12)
+    plt.title('Distribuição de Preços de Vinhos por País', fontsize=16, pad=16)
+    plt.xlabel('País', fontsize=12)
+    plt.ylabel('Preço', fontsize=12)
     plt.tight_layout()
     plt.show()
 
@@ -233,7 +233,7 @@ def get_top10_countries_price_points_correlation(df: DataFrame):
         corr_matrix_sorted,
         annot=True, cmap='rocket_r', center=0, cbar=True
     )
-    plt.title('Correlation between Price and Points by Country (Sorted)', fontsize=14)
+    plt.title('Correlação entre Preço e Pontuação por País (Ordenado)', fontsize=14)
     plt.show()
 
 def get_price_points_trend_over_years(df: DataFrame):
