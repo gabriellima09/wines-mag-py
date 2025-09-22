@@ -355,5 +355,42 @@ def get_tasters_points_relation(df: DataFrame):
     plt.tight_layout()
     plt.show()
 
+def get_regular_premium_prices_high_quality_relation(df: DataFrame):
+    # Filtra os vinhos com pontos > 90
+    cols = ['country', 'description', 'designation', 'points', 'price', 'province', 'title', 'variety', 'winery', 'year']
+    high_scores = df.loc[df['points'] > 90, cols]
 
+    # Filter data to remove missing prices
+    price_data = high_scores[high_scores['price'].notna()].copy()
 
+    # Create price categories with $160 threshold
+    price_data['price_category'] = price_data['price'].apply(
+        lambda x: 'Premium ($160+)' if x >= 160 else 'Regular ($<160)'
+    )
+
+    # VIOLIN PLOT
+    plt.figure(figsize=(10, 6))
+    sns.violinplot(data=price_data, x='price_category', y='points', palette='flare')
+    plt.title('Vinhos de Preços Regulares X Premium (Alta Qualidade)', fontsize=14, fontweight='bold')
+    plt.xlabel('Categoria de Preço')
+    plt.ylabel('Pontos')
+    plt.tight_layout()
+    plt.show()
+
+def get_year_distribuition_high_quality(df: DataFrame):
+    cols = ['country', 'description', 'designation', 'points', 'price', 'province', 'title', 'variety', 'winery', 'year']
+    high_scores = df.loc[df['points'] > 90, cols]
+    # Prepare year data
+    year_data = high_scores[high_scores['year'].notna()].copy()
+    year_counts = year_data['year'].value_counts().sort_index().reset_index()
+    year_counts.columns = ['year', 'count']
+
+    # BAR PLOT
+    plt.figure(figsize=(14, 6))
+    sns.barplot(data=year_counts, x='year', y='count', palette='flare')
+    plt.title('Distribuição de Vinhos por Ano (Alta Qualidade)', fontsize=14, fontweight='bold')
+    plt.xlabel('Ano')
+    plt.ylabel('Quantidade')
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.show()
