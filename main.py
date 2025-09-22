@@ -24,9 +24,6 @@ from winemag_data import winesmag
 # plots.get_description_points_relation(winesmag)
 # plots.get_tasters_points_relation(winesmag)
 
-
-
-
 # DATA ANALISYS AND VISUALIZATION SAMPLES
 
 # #top 10 mais caros 

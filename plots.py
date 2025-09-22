@@ -1,5 +1,6 @@
 from pandas import DataFrame
 from matplotlib.patches import Patch
+from matplotlib.ticker import MaxNLocator
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,7 +27,7 @@ def get_top10_countries_with_top3_provinces(df: DataFrame):
     country_order = totals.index.tolist()
 
     # --- magma base colors per country ---
-    cmap = cm.get_cmap("magma", len(country_order))
+    cmap = cm.get_cmap("flare_r", len(country_order))
     country_base_rgb = {c: cmap(i)[:3] for i, c in enumerate(country_order)}
 
     # --- build per-country & per-province shades
@@ -160,45 +161,48 @@ def get_top10_countries_with_top3_provinces(df: DataFrame):
     plt.tight_layout()
     plt.show()
 
-def get_top10_countries_price_distribution(df: DataFrame):
+def get_top10_countries_price_distribution(df: pd.DataFrame):
     # Keep only rows with country and price
     df_clean = df.dropna(subset=['country', 'price'])
 
     # Take top 10 countries by median price
-    top10_countries = df_clean.groupby('country')['price'].median().sort_values(ascending=False).index[:10]
+    top10_countries = (
+        df_clean.groupby('country')['price']
+        .median()
+        .sort_values(ascending=False)
+        .index[:10]
+    )
 
-    # Create boxplot with points overlay (no y-axis limit, so outliers included)
+    # Apply IQR filtering for each country
+    def iqr_filter(subdf):
+        Q1 = subdf['price'].quantile(0.25)
+        Q3 = subdf['price'].quantile(0.75)
+        IQR = Q3 - Q1
+        lower = Q1 - 1.5 * IQR
+        upper = Q3 + 1.5 * IQR
+        return subdf[(subdf['price'] >= lower) & (subdf['price'] <= upper)]
+
+    df_filtered = (
+        df_clean[df_clean['country'].isin(top10_countries)]
+        .groupby('country', group_keys=False)
+        .apply(iqr_filter)
+    )
+
+    # Plot boxplot
     plt.figure(figsize=(16, 8))
     sns.boxplot(
-        data=df_clean[df_clean['country'].isin(top10_countries)],
+        data=df_filtered,
         x='country',
         y='price',
         order=top10_countries,
         showcaps=True,
-        showfliers=True,  # include outliers
-        boxprops={'facecolor': 'lightblue', 'edgecolor': 'black'},
-        medianprops={'color': 'red', 'linewidth': 2},
+        palette="flare_r",
         whiskerprops={'color': 'black'}
     )
 
-    # Overlay wine quality (points) as jittered scatter
-    sns.stripplot(
-        data=df_clean[df_clean['country'].isin(top10_countries)],
-        x='country',
-        y='price',
-        order=top10_countries,
-        hue='points',
-        dodge=False,
-        jitter=0.3,
-        size=3,
-        alpha=0.4,
-        palette='viridis'
-    )
-
-    plt.title('Wine Price Distribution by Country with Quality Overlay', fontsize=16, pad=16)
+    plt.title('Wine Price Distribution by Country (IQR Outliers Removed)', fontsize=16, pad=16)
     plt.xlabel('Country', fontsize=12)
     plt.ylabel('Price', fontsize=12)
-    plt.legend(title='Points', bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
     plt.show()
 
@@ -243,23 +247,48 @@ def get_price_points_trend_over_years(df: DataFrame):
     all_years = pd.RangeIndex(summary_by_year.index.min(), summary_by_year.index.max() + 1)
     summary_by_year = summary_by_year.reindex(all_years)
 
+    # Paleta flare reversa
+    flare_colors = sns.color_palette("flare", 2)
+    points_color, price_color = flare_colors[0], flare_colors[1]
+
     fig, ax1 = plt.subplots(figsize=(12,6))
 
-    sns.lineplot(x=summary_by_year.index, y=summary_by_year['points'], marker='o', color='blue', label='Média de Pontos', ax=ax1)
-    ax1.set_xlabel('Ano de Safra')
-    ax1.set_ylabel('Média de Pontos', color='blue')
-    ax1.tick_params(axis='y', labelcolor='blue')
+    # Linha de pontos
+    sns.lineplot(
+        x=summary_by_year.index,
+        y=summary_by_year['points'],
+        marker='o',
+        color=points_color,
+        label='Média de Pontos',
+        ax=ax1
+    )
+    ax1.set_xlabel('')  # Remove "Ano de Safra" label
+    ax1.set_ylabel('Média de Pontos', color=points_color)
+    ax1.tick_params(axis='y', labelcolor=points_color)
 
-    # Ticks do eixo X a cada ano
-    plt.xticks(ticks=summary_by_year.index, labels=summary_by_year.index, rotation=45)
+    # Ajusta ticks do eixo X para anos inteiros
+    from matplotlib.ticker import MultipleLocator
+    ax1.xaxis.set_major_locator(MultipleLocator(1))  # Força intervalos de 1 ano
+    plt.xticks(rotation=45, ha='right')
 
     # Segundo eixo y para preço
     ax2 = ax1.twinx()
-    sns.lineplot(x=summary_by_year.index, y=summary_by_year['price'], marker='o', color='green', label='Preço Médio', ax=ax2)
-    ax2.set_ylabel('Preço Médio (USD)', color='green')
-    ax2.tick_params(axis='y', labelcolor='green')
+    sns.lineplot(
+        x=summary_by_year.index,
+        y=summary_by_year['price'],
+        marker='o',
+        color=price_color,
+        label='Preço Médio',
+        ax=ax2
+    )
+    ax2.set_ylabel('Preço Médio (USD)', color=price_color)
+    ax2.tick_params(axis='y', labelcolor=price_color)
 
-    plt.title('Comparativo: Média de Pontos vs Preço Médio por Ano de Safra')
+    # Remove all legends
+    ax1.legend().set_visible(False)
+    ax2.legend().set_visible(False)
+
+    plt.title('')  # Remove title
     plt.tight_layout()
     plt.show()
 
@@ -274,7 +303,23 @@ def get_description_points_relation(df: DataFrame):
     wines_clean['description_length'] = wines_clean['description'].apply(len)
 
     plt.figure(figsize=(12,6))
-    sns.scatterplot(data=wines_clean, x='description_length', y='points', alpha=0.3)
+    
+    # Usa flare_r como colormap com gradiente baseado nos pontos
+    scatter = plt.scatter(
+        wines_clean['description_length'], 
+        wines_clean['points'],
+        c=wines_clean['points'],  # Cor baseada na pontuação
+        cmap='flare',           # Paleta flare reversa
+        alpha=0.6,
+        s=20,                     # Tamanho dos pontos
+        edgecolors='white',       # Borda branca sutil
+        linewidth=0.1
+    )
+    
+    # Adiciona barra de cores
+    cbar = plt.colorbar(scatter)
+    cbar.set_label('Pontuação', rotation=270, labelpad=20)
+    
     plt.xlabel('Tamanho da Descrição', fontsize=12)
     plt.ylabel('Pontuação', fontsize=12)
     plt.title('Relação entre tamanho da descrição e pontuação', fontsize=14)
@@ -300,7 +345,7 @@ def get_tasters_points_relation(df: DataFrame):
         data=wines_clean,
         x='taster_name',
         y='points',
-        palette='flare',
+        palette='flare_r',
         order=order  # passa a ordem aqui
     )
     plt.xticks(rotation=90)
