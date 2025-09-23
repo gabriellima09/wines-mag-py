@@ -23,6 +23,7 @@ plots.get_most_common_words_description_high_quality(winesmag)
 ######## DATA ANALISYS AND VISUALIZATION SAMPLES
 # print(winesmag[winesmag['country'] == 'Argentina'].describe())
 # print(winesmag[winesmag['country'] == 'Argentina']['price'].median())
+# print(winesmag[winesmag['country'] == 'Argentina']['points'].median())
 
 # # Calcula a variância
 # price_variance = winesmag['price'].dropna().var()  # Por padrão, usa amostra (n-1)
