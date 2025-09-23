@@ -1,12 +1,13 @@
 from pandas import DataFrame
 from matplotlib.patches import Patch
-from matplotlib.ticker import MaxNLocator
+from collections import Counter
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
-import colorsys
 import seaborn as sns
 import pandas as pd
+import colorsys
+import re
 
 def get_top10_countries_with_top3_provinces(df: DataFrame):
 
@@ -94,7 +95,7 @@ def get_top10_countries_with_top3_provinces(df: DataFrame):
     ax.grid(False)
 
     # Title only
-    ax.set_title("Top 10 Países Produtores e suas Top 3 Províncias", fontsize=16, pad=16)
+    # ax.set_title("Top 10 Países Produtores e suas Top 3 Províncias", fontsize=16, pad=16)
 
     # --- Create two separate legends for better grouping ---
     # Split countries into two groups for two columns
@@ -159,6 +160,7 @@ def get_top10_countries_with_top3_provinces(df: DataFrame):
                     title=" ", frameon=False, fontsize=9, title_fontsize=10)
 
     plt.tight_layout()
+    plt.savefig('img/top10_countries_with_top3_provinces.png')
     plt.show()
 
 def get_top10_countries_price_distribution(df: pd.DataFrame):
@@ -197,13 +199,24 @@ def get_top10_countries_price_distribution(df: pd.DataFrame):
         order=top10_countries,
         showcaps=True,
         palette="flare_r",
-        whiskerprops={'color': 'black'}
+        whiskerprops={'color': 'black'},
+        flierprops={
+        'marker': 'D',
+        'markerfacecolor': 'black',
+        'markersize': 4,
+        'linestyle': 'none'
+        },        
     )
 
-    plt.title('Distribuição de Preços de Vinhos por País', fontsize=16, pad=16)
-    plt.xlabel('País', fontsize=12)
-    plt.ylabel('Preço', fontsize=12)
+    # Remove axis labels
+    plt.xlabel('')
+    plt.ylabel('(USD)')
+
+    # plt.title('Distribuição de Preços de Vinhos por País', fontsize=16, pad=16)
+    plt.xticks(fontsize=12, fontweight='bold')
+    plt.yticks(fontsize=12, fontweight='bold')
     plt.tight_layout()
+    plt.savefig('img/top10_countries_price_distribution.png')
     plt.show()
 
 def get_top10_countries_price_points_correlation(df: DataFrame):
@@ -224,16 +237,27 @@ def get_top10_countries_price_points_correlation(df: DataFrame):
     # Transformar em matriz para heatmap
     corr_matrix = corr_by_country.set_index('country')[['correlation']]
 
-    # Ordenar pela correlação (descendente)
-    corr_matrix_sorted = corr_matrix.sort_values('correlation', ascending=False)
+    # Rename column to empty string to remove "correlation" text
+    corr_matrix.columns = ['']
 
-    # Plotar heatmap com palette 'flare'
+    # Ordenar pela correlação (descendente)
+    corr_matrix_sorted = corr_matrix.sort_values('', ascending=False)
+
+    # Plotar heatmap
     plt.figure(figsize=(8,6))
     sns.heatmap(
         corr_matrix_sorted,
-        annot=True, cmap='rocket_r', center=0, cbar=True
+        annot=True,
+        cmap='flare',
+        center=0,
+        cbar=True
     )
-    plt.title('Correlação entre Preço e Pontuação por País (Ordenado)', fontsize=14)
+
+    # Remove axis labels
+    plt.xlabel('')
+    plt.ylabel('')
+
+    plt.savefig('img/top10_countries_price_points_correlation.png')
     plt.show()
 
 def get_price_points_trend_over_years(df: DataFrame):
@@ -259,11 +283,11 @@ def get_price_points_trend_over_years(df: DataFrame):
         y=summary_by_year['points'],
         marker='o',
         color=points_color,
-        label='Média de Pontos',
+        label='Pontos',
         ax=ax1
     )
     ax1.set_xlabel('')  # Remove "Ano de Safra" label
-    ax1.set_ylabel('Média de Pontos', color=points_color)
+    ax1.set_ylabel('Pontos', color=points_color)
     ax1.tick_params(axis='y', labelcolor=points_color)
 
     # Ajusta ticks do eixo X para anos inteiros
@@ -278,7 +302,7 @@ def get_price_points_trend_over_years(df: DataFrame):
         y=summary_by_year['price'],
         marker='o',
         color=price_color,
-        label='Preço Médio',
+        label='Preço Médio (USD)',
         ax=ax2
     )
     ax2.set_ylabel('Preço Médio (USD)', color=price_color)
@@ -289,7 +313,9 @@ def get_price_points_trend_over_years(df: DataFrame):
     ax2.legend().set_visible(False)
 
     plt.title('')  # Remove title
+
     plt.tight_layout()
+    plt.savefig('img/price_points_trend_over_years.png')
     plt.show()
 
 def get_description_points_relation(df: DataFrame):
@@ -318,12 +344,13 @@ def get_description_points_relation(df: DataFrame):
     
     # Adiciona barra de cores
     cbar = plt.colorbar(scatter)
-    cbar.set_label('Pontuação', rotation=270, labelpad=20)
+    cbar.set_label('', rotation=270, labelpad=20)
     
-    plt.xlabel('Tamanho da Descrição', fontsize=12)
-    plt.ylabel('Pontuação', fontsize=12)
-    plt.title('Relação entre tamanho da descrição e pontuação', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('')
+    # plt.title('Relação entre tamanho da descrição e pontuação', fontsize=14)
     plt.tight_layout()
+    plt.savefig('img/description_points_relation.png')
     plt.show()
 
 def get_tasters_points_relation(df: DataFrame):
@@ -346,13 +373,20 @@ def get_tasters_points_relation(df: DataFrame):
         x='taster_name',
         y='points',
         palette='flare_r',
-        order=order  # passa a ordem aqui
+        order=order,
+        flierprops={
+        'marker': 'D',
+        'markerfacecolor': 'black',
+        'markersize': 3,
+        'linestyle': 'none'
+        },   
     )
     plt.xticks(rotation=90)
-    plt.title('Diferença de pontuação entre degustadores (ordenado por mediana)', fontsize=14)
-    plt.xlabel('Degustador', fontsize=12)
-    plt.ylabel('Pontuação', fontsize=12)
+    #plt.title('Diferença de pontuação entre degustadores (ordenado por mediana)', fontsize=14)
+    plt.xlabel('')
+    plt.ylabel('')
     plt.tight_layout()
+    plt.savefig('img/tasters_points_relation.png')    
     plt.show()
 
 def get_regular_premium_prices_high_quality_relation(df: DataFrame):
@@ -371,10 +405,11 @@ def get_regular_premium_prices_high_quality_relation(df: DataFrame):
     # VIOLIN PLOT
     plt.figure(figsize=(10, 6))
     sns.violinplot(data=price_data, x='price_category', y='points', palette='flare')
-    plt.title('Vinhos de Preços Regulares X Premium (Alta Qualidade)', fontsize=14, fontweight='bold')
-    plt.xlabel('Categoria de Preço')
-    plt.ylabel('Pontos')
+    # plt.title('Vinhos de Preços Regulares X Premium (Alta Qualidade)', fontsize=14, fontweight='bold')
+    plt.xlabel('')
+    plt.ylabel('')
     plt.tight_layout()
+    plt.savefig('img/regular_premium_prices_high_quality_relation.png')    
     plt.show()
 
 def get_year_distribuition_high_quality(df: DataFrame):
@@ -388,9 +423,54 @@ def get_year_distribuition_high_quality(df: DataFrame):
     # BAR PLOT
     plt.figure(figsize=(14, 6))
     sns.barplot(data=year_counts, x='year', y='count', palette='flare')
-    plt.title('Distribuição de Vinhos por Ano (Alta Qualidade)', fontsize=14, fontweight='bold')
-    plt.xlabel('Ano')
-    plt.ylabel('Quantidade')
+    #plt.title('Distribuição de Vinhos por Ano (Alta Qualidade)', fontsize=14, fontweight='bold')
+    plt.xlabel('')
+    plt.ylabel('')
     plt.xticks(rotation=90)
     plt.tight_layout()
+    plt.savefig('img/year_distribuition_high_quality.png')    
+    plt.show()
+
+def get_most_common_words_description_high_quality(df: DataFrame):
+    cols = ['country', 'description', 'designation', 'points', 'price', 'province', 'title', 'variety', 'winery', 'year']
+    high_scores = df.loc[df['points'] > 90, cols]
+
+    # Define common stopwords to exclude
+    stopwords = {'the', 'and', 'is', 'it', 'to', 'of', 'a', 'in', 'for', 'are', 'as', 
+                'with', 'on', 'this', 'that', 'by', 'from', 'up', 'an', 'be', 'or',
+                'at', 'but', 'not', 'have', 'has', 'will', 'more', 'can', 'been', 'very',
+                'wine', 'its', 'full', 'through', 'shows', 'years', 'now', 'palate',
+                'drink', 'finish', 'structure', 'nose', 'flavors', 'there', '.',
+                'rich', 'well', 'long', 'while'}
+
+    # Get all descriptions
+    all_descriptions = ' '.join(high_scores['description'].dropna())
+
+    # Extract words and filter out stopwords
+    words = [word for word in re.findall(r'\b[a-zA-Z]+\b', all_descriptions.lower()) 
+            if word not in stopwords and len(word) > 2]
+
+    # Count frequencies and order descending
+    word_counts = Counter(words)
+    most_common = word_counts.most_common()  # Remove the limit to get all words
+
+    # Display the results (showing top 25)
+    print("Top 25 most common words in high-scoring wine descriptions:")
+    for i, (word, count) in enumerate(most_common[:25], 1):
+        print(f"{i:2d}. {word:<15} ({count:,} times)")
+
+    from wordcloud import WordCloud
+
+    # Convert to dictionary for WordCloud
+    freq_dict = dict(most_common[:25])
+
+    # Generate WordCloud
+    wordcloud = WordCloud(width=800, height=400, background_color='white', colormap='flare')\
+                .generate_from_frequencies(freq_dict)
+
+    # Plot
+    plt.figure(figsize=(12,6))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.savefig('img/most_common_words_description_high_quality.png')    
     plt.show()

@@ -1,35 +1,32 @@
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import numpy as np
 import pandas as pd
-import seaborn as sns
-import colorsys
-import matplotlib.cm as cm
-from matplotlib.patches import Patch
 from scipy.stats import f_oneway
 
 import plots
 from winemag_data import winesmag
 
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', None)
-print(winesmag.info())
+# pd.set_option('display.max_columns', None)
+# pd.set_option('display.max_rows', None)
+# print(winesmag.info())
 # print(winesmag.head())
 
 # Plots generation
-# plots.get_top10_countries_with_top3_provinces(winesmag)
-# plots.get_top10_countries_price_distribution(winesmag)
-# plots.get_top10_countries_price_points_correlation(winesmag)
-# plots.get_price_points_trend_over_years(winesmag)
-# plots.get_description_points_relation(winesmag)
-# plots.get_tasters_points_relation(winesmag)
+plots.get_top10_countries_with_top3_provinces(winesmag)
+plots.get_top10_countries_price_distribution(winesmag)
+plots.get_top10_countries_price_points_correlation(winesmag)
+plots.get_price_points_trend_over_years(winesmag)
+plots.get_description_points_relation(winesmag)
+plots.get_tasters_points_relation(winesmag)
 plots.get_regular_premium_prices_high_quality_relation(winesmag)
 plots.get_year_distribuition_high_quality(winesmag)
+plots.get_most_common_words_description_high_quality(winesmag)
 
 ######## DATA ANALISYS AND VISUALIZATION SAMPLES
-
 # print(winesmag[winesmag['country'] == 'Argentina'].describe())
 # print(winesmag[winesmag['country'] == 'Argentina']['price'].median())
+
+# # Calcula a variância
+# price_variance = winesmag['price'].dropna().var()  # Por padrão, usa amostra (n-1)
+# print("Variância dos preços dos vinhos:", price_variance)
 
 # #top 10 mais caros 
 # print('CAROS')
@@ -41,40 +38,12 @@ plots.get_year_distribuition_high_quality(winesmag)
 # df_clean = winesmag.dropna(subset=['title', 'price', 'country', 'points']).groupby('title').first().reset_index()
 # print(df_clean[['title', 'price', 'country', 'points']].sort_values(['price', 'points']).head())
 
-############### Vinhos com maior qualidade por avalialiação
+# ############## Vinhos com maior qualidade por avalialiação
 # # Filtra os vinhos com pontos > 90
-cols = ['country', 'description', 'designation', 'points', 'price', 'province', 'title', 'variety', 'winery', 'year']
-high_scores = winesmag.loc[winesmag['points'] > 90, cols]
+# cols = ['country', 'description', 'designation', 'points', 'price', 'province', 'title', 'variety', 'winery', 'year']
+# high_scores = winesmag.loc[winesmag['points'] > 90, cols]
 
-
-from collections import Counter
-import re
-
-# Define common stopwords to exclude
-stopwords = {'the', 'and', 'is', 'it', 'to', 'of', 'a', 'in', 'for', 'are', 'as', 
-            'with', 'on', 'this', 'that', 'by', 'from', 'up', 'an', 'be', 'or',
-            'at', 'but', 'not', 'have', 'has', 'will', 'more', 'can', 'been', 'very',
-            'wine', 'its', 'full', 'through', 'shows', 'years', 'now', 'palate',
-            'drink', 'finish'}
-
-# Get all descriptions
-all_descriptions = ' '.join(high_scores['description'].dropna())
-
-# Extract words and filter out stopwords
-words = [word for word in re.findall(r'\b[a-zA-Z]+\b', all_descriptions.lower()) 
-         if word not in stopwords and len(word) > 2]
-
-# Count frequencies and order descending
-word_counts = Counter(words)
-most_common = word_counts.most_common()  # Remove the limit to get all words
-
-# Display the results (showing top 30)
-print("Top 30 most common words in high-scoring wine descriptions:")
-for i, (word, count) in enumerate(most_common[:30], 1):
-    print(f"{i:2d}. {word:<15} ({count:,} times)")
-
-
-# Contagem de vinhos por país
+# # Contagem de vinhos por país
 # print("\nQuantidade de vinhos por país:")
 # print(high_scores['country'].value_counts().head(10))  # top 10 países
 
@@ -105,22 +74,6 @@ for i, (word, count) in enumerate(most_common[:30], 1):
 # # Count and calculate percentage
 # designation_counts = winesmag['designation_grouped'].value_counts()
 # designation_percent = (designation_counts / designation_counts.sum()) * 100
-
-# # Plot
-# plt.figure(figsize=(8,5))
-# designation_percent.head(20).plot(kind='bar')
-
-# plt.title("Distribuição (%) das designações de vinhos")
-# plt.ylabel("Percentual (%)")
-# plt.xlabel("Designação")
-# plt.xticks(rotation=45, ha='right')
-
-# # Add value labels on top of bars
-# for i, v in enumerate(designation_percent.head(10)):
-#     plt.text(i, v + 0.5, f"{v:.1f}%", ha='center', fontsize=9)
-
-# plt.tight_layout()
-# plt.show()
 
 # # Média de pontos por degustador
 # # Filtra apenas linhas sem valores nulos em taster_name e points
