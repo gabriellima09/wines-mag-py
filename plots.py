@@ -94,6 +94,11 @@ def get_top10_countries_with_top3_provinces(df: DataFrame):
         spine.set_visible(False)
     ax.grid(False)
 
+    # Make y-axis labels (country names) bold
+    ax.tick_params(axis='y', labelsize=10)
+    for label in ax.get_yticklabels():
+        label.set_fontweight('bold')
+
     # Title only
     # ax.set_title("Top 10 Países Produtores e suas Top 3 Províncias", fontsize=16, pad=16)
 
@@ -245,7 +250,7 @@ def get_top10_countries_price_points_correlation(df: DataFrame):
 
     # Plotar heatmap
     plt.figure(figsize=(8,6))
-    sns.heatmap(
+    ax = sns.heatmap(
         corr_matrix_sorted,
         annot=True,
         cmap='flare',
@@ -256,6 +261,10 @@ def get_top10_countries_price_points_correlation(df: DataFrame):
     # Remove axis labels
     plt.xlabel('')
     plt.ylabel('')
+    
+    # Make y-axis labels (country names) bold
+    for label in ax.get_yticklabels():
+        label.set_fontweight('bold')
 
     plt.savefig('img/top10_countries_price_points_correlation.png')
     plt.show()
@@ -419,14 +428,20 @@ def get_year_distribuition_high_quality(df: DataFrame):
     year_data = high_scores[high_scores['year'].notna()].copy()
     year_counts = year_data['year'].value_counts().sort_index().reset_index()
     year_counts.columns = ['year', 'count']
+    
+    # Convert year to int to remove .0
+    year_counts['year'] = year_counts['year'].astype(int)
 
     # BAR PLOT
     plt.figure(figsize=(14, 6))
-    sns.barplot(data=year_counts, x='year', y='count', palette='flare')
+    ax = sns.barplot(data=year_counts, x='year', y='count', palette='flare')
     #plt.title('Distribuição de Vinhos por Ano (Alta Qualidade)', fontsize=14, fontweight='bold')
     plt.xlabel('')
     plt.ylabel('')
-    plt.xticks(rotation=90)
+    
+    # Format x-axis labels to show integers without .0
+    ax.set_xticklabels([int(float(label.get_text())) for label in ax.get_xticklabels()])
+    plt.xticks(rotation=45)
     plt.tight_layout()
     plt.savefig('img/year_distribuition_high_quality.png')    
     plt.show()
