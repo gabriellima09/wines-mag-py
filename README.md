@@ -47,4 +47,5 @@ The main goal of this project is to perform exploratory data analysis on wine da
 ## Results
 
 You can view the final report generated as part of this project at the following link:  
-[Gabriel Lima Gomes - Relatório](https://github.com/gabriellima09/wines-mag-py/blob/feature/relatorio/docs/Gabriel_Lima_Gomes_Relatorio.pdf)
+[Gabriel Lima Gomes - Relatório](https://github.com/gabriellima09/wines-mag-py/blob/main/docs/Gabriel_Lima_Gomes_Relatorio.pdf)
+
